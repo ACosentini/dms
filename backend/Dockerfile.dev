@@ -1,0 +1,33 @@
+FROM eclipse-temurin:17-jdk
+WORKDIR /app
+
+# Install Maven
+RUN apt-get update && \
+    apt-get install -y maven inotify-tools && \
+    apt-get clean
+
+# Copy initial pom.xml for dependency caching
+COPY pom.xml .
+RUN mvn dependency:go-offline
+
+# Create a script that will recompile and restart on file changes
+RUN echo '#!/bin/sh\n\
+echo "Starting Spring Boot application..."\n\
+# Initial start\n\
+mvn spring-boot:run &\n\
+PID=$!\n\
+\n\
+# Watch for changes\n\
+while true; do\n\
+  inotifywait -e modify,create,delete -r /app/src\n\
+  echo "Changes detected, restarting application..."\n\
+  kill $PID\n\
+  wait $PID\n\
+  # Compile without clean to avoid permission issues\n\
+  mvn compile spring-boot:run &\n\
+  PID=$!\n\
+done\n\
+' > /run-dev.sh && chmod +x /run-dev.sh
+
+# Run the development script
+CMD ["/run-dev.sh"] 
