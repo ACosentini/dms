@@ -1,4 +1,4 @@
-package com.example.dms;
+package io.github.acosentini.dms;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

@@ -1,4 +1,4 @@
-package com.example.dms.controller;
+package io.github.acosentini.dms.controller;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -8,6 +8,6 @@ public class HelloController {
     
     @GetMapping("/api/hello")
     public String hello() {
-        return "Hello from DMS Backend!!!";
+        return "Hello from DMS Backend!!";
     }
 } 

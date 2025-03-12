@@ -1,6 +1,9 @@
 services:
   backend:
-    image: ${DOCKER_REGISTRY}/dms-backend:${VERSION}
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: ${DOCKER_REGISTRY:-localhost}/dms-backend:${VERSION:-latest}
     restart: always
     environment:
       - SPRING_PROFILES_ACTIVE=prod
@@ -8,12 +11,29 @@ services:
       - .env.prod
     volumes:
       - file-storage:/app/files
+    depends_on:
+      - db
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+    networks:
+      - dms-network
 
   frontend:
-    image: ${DOCKER_REGISTRY}/dms-frontend:${VERSION}
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: ${DOCKER_REGISTRY:-localhost}/dms-frontend:${VERSION:-latest}
     restart: always
     depends_on:
       - backend
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+    networks:
+      - dms-network
 
   db:
     image: mysql:8.0
@@ -22,7 +42,17 @@ services:
       - .env.prod
     volumes:
       - db-data:/var/lib/mysql
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    networks:
+      - dms-network
 
 volumes:
   db-data:
   file-storage:
+
+networks:
+  dms-network:
+    driver: bridge
