@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/tags")
+@RequestMapping("/tags")
 @CrossOrigin(origins = "*", maxAge = 3600)
 public class TagController {
 

@@ -28,5 +28,5 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
     
     Page<Document> findByTagsId(Long tagId, Pageable pageable);
     
-    Page<Document> findByNameContainingOrDescriptionContaining(String name, String description, Pageable pageable);
+    Page<Document> findByNameContaining(String name, Pageable pageable);
 } 

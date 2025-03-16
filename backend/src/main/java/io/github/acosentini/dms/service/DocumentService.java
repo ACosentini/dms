@@ -107,14 +107,14 @@ public class DocumentService {
     }
     
     /**
-     * Search documents by name or description
+     * Search documents by name
      * 
      * @param keyword The search keyword
      * @param pageable Pagination information
      * @return Page of documents
      */
     public Page<Document> searchDocuments(String keyword, Pageable pageable) {
-        return documentRepository.findByNameContainingOrDescriptionContaining(keyword, keyword, pageable);
+        return documentRepository.findByNameContaining(keyword, pageable);
     }
     
     /**

@@ -7,10 +7,11 @@ import axios, {
 import { ApiOptions, ApiResponse, ErrorResponse } from "../types";
 
 const apiClient: AxiosInstance = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || "http://localhost:8080/api",
+  baseURL: process.env.REACT_APP_API_URL || "/api",
   headers: {
     "Content-Type": "application/json",
   },
+  //withCredentials: true,
 });
 
 apiClient.interceptors.request.use(

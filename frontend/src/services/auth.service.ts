@@ -1,7 +1,17 @@
 import { JwtResponse, LoginRequest, RegisterRequest } from "../types";
-import { post } from "./api.service";
+import { get, post } from "./api.service";
 
 const AuthService = {
+  hello: async (): Promise<string> => {
+    try {
+      const response = await get<string>("/hello");
+      return response.data;
+    } catch (error) {
+      console.error("Hello service error:", error);
+      throw error;
+    }
+  },
+
   login: async (credentials: LoginRequest): Promise<JwtResponse> => {
     const response = await post<JwtResponse, LoginRequest>(
       "/auth/login",

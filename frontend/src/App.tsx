@@ -23,8 +23,8 @@ const App: React.FC = () => {
             <Route path="/register" element={<Register />} />
 
             {/* Protected routes */}
+            <Route path="/" element={<Dashboard />} />
             <Route element={<ProtectedRoute />}>
-              <Route path="/" element={<Dashboard />} />
               <Route path="/documents" element={<DocumentList />} />
               <Route path="/documents/:id" element={<DocumentDetail />} />
               <Route path="/tags" element={<TagManagement />} />
