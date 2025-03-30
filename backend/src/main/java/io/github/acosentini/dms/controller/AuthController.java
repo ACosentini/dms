@@ -3,8 +3,12 @@ package io.github.acosentini.dms.controller;
 import io.github.acosentini.dms.dto.JwtResponse;
 import io.github.acosentini.dms.dto.LoginRequest;
 import io.github.acosentini.dms.dto.RegisterRequest;
+import io.github.acosentini.dms.dto.TokenRefreshRequest;
+import io.github.acosentini.dms.dto.TokenRefreshResponse;
+import io.github.acosentini.dms.dto.LogoutRequest;
 import io.github.acosentini.dms.model.User;
 import io.github.acosentini.dms.service.UserService;
+import io.github.acosentini.dms.security.JwtTokenProvider;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -21,18 +25,41 @@ public class AuthController {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private JwtTokenProvider tokenProvider;
+
     @PostMapping("/login")
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
-        String jwt = userService.authenticateUser(loginRequest.getUsername(), loginRequest.getPassword());
+        User user = userService.authenticateUser(loginRequest.getUsername(), loginRequest.getPassword());
         
-        User user = userService.getUserByUsername(loginRequest.getUsername());
+        String accessToken = tokenProvider.generateAccessToken(user);
+        String refreshToken = tokenProvider.generateRefreshToken(user);
         
         return ResponseEntity.ok(new JwtResponse(
-            jwt,
+            accessToken,
+            refreshToken,
             user.getId(),
-            user.getUsername(),
-            user.getEmail()
+            user.getUsername()
         ));
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refreshToken(@Valid @RequestBody TokenRefreshRequest request) {
+        if (!tokenProvider.validateRefreshToken(request.getRefreshToken())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body("Invalid refresh token");
+        }
+
+        User user = tokenProvider.getUserFromRefreshToken(request.getRefreshToken());
+        String newAccessToken = tokenProvider.generateAccessToken(user);
+        
+        return ResponseEntity.ok(new TokenRefreshResponse(newAccessToken));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(@Valid @RequestBody LogoutRequest request) {
+        tokenProvider.invalidateRefreshToken(request.getRefreshToken());
+        return ResponseEntity.ok("Logged out successfully");
     }
 
     @PostMapping("/register")
@@ -44,21 +71,22 @@ public class AuthController {
                 .body("Error: Username is already taken!");
         }
 
-        // Check if email is already in use
-        if (userService.existsByEmail(registerRequest.getEmail())) {
-            return ResponseEntity
-                .badRequest()
-                .body("Error: Email is already in use!");
-        }
-
         // Create new user
-        User user = new User();
-        user.setUsername(registerRequest.getUsername());
-        user.setEmail(registerRequest.getEmail());
-        user.setPassword(registerRequest.getPassword());
+        User user = new User(
+            registerRequest.getUsername(),
+            registerRequest.getPassword()
+        );
 
-        userService.registerUser(user);
+        User registeredUser = userService.registerUser(user);
+        
+        String accessToken = tokenProvider.generateAccessToken(registeredUser);
+        String refreshToken = tokenProvider.generateRefreshToken(registeredUser);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body("User registered successfully!");
+        return ResponseEntity.status(HttpStatus.CREATED).body(new JwtResponse(
+            accessToken,
+            refreshToken,
+            registeredUser.getId(),
+            registeredUser.getUsername()
+        ));
     }
 } 

@@ -5,6 +5,8 @@ import axios, {
   AxiosResponse,
 } from "axios";
 import { ApiOptions, ApiResponse, ErrorResponse } from "../types";
+import StorageService from "./storage.service";
+import AuthService from "./auth.service";
 
 const apiClient: AxiosInstance = axios.create({
   baseURL: process.env.REACT_APP_API_URL || "/api",
@@ -14,9 +16,47 @@ const apiClient: AxiosInstance = axios.create({
   //withCredentials: true,
 });
 
+export const AUTH_EVENTS = {
+  UNAUTHORIZED: "auth:unauthorized",
+};
+
+// Queue for requests that are waiting for token refresh
+let refreshQueue: Promise<void>[] = [];
+
 apiClient.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("token");
+  async (config) => {
+    const token = StorageService.getAccessToken();
+    console.log("Making request with token:", token);
+
+    // Only attempt refresh if there's a token and it's expired
+    if (
+      token &&
+      StorageService.isTokenExpired() &&
+      config.url !== "/auth/refresh"
+    ) {
+      try {
+        // If there are no refresh attempts in progress, start a new one
+        if (refreshQueue.length === 0) {
+          const refreshPromise = AuthService.refreshToken();
+          refreshQueue.push(refreshPromise);
+          await refreshPromise;
+          refreshQueue = [];
+        } else {
+          // Wait for the ongoing refresh to complete
+          await refreshQueue[0];
+        }
+
+        const newToken = StorageService.getAccessToken();
+        if (newToken && config.headers) {
+          config.headers["Authorization"] = `Bearer ${newToken}`;
+        }
+      } catch (error) {
+        StorageService.clearAuth();
+        window.dispatchEvent(new CustomEvent(AUTH_EVENTS.UNAUTHORIZED));
+        return Promise.reject(error);
+      }
+    }
+
     if (token && config.headers) {
       config.headers["Authorization"] = `Bearer ${token}`;
     }
@@ -31,8 +71,8 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError<ErrorResponse>) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem("token");
-      window.location.href = "/login";
+      StorageService.clearAuth();
+      window.dispatchEvent(new CustomEvent(AUTH_EVENTS.UNAUTHORIZED));
     }
     return Promise.reject(error);
   }

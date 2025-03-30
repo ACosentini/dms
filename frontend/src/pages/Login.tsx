@@ -15,6 +15,7 @@ import { Link as RouterLink, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { LoginRequest } from "../types";
 import { Login as LoginIcon } from "@mui/icons-material";
+import StorageService from "../services/storage.service";
 
 const Login: React.FC = () => {
   const [formData, setFormData] = useState<LoginRequest>({
@@ -30,12 +31,11 @@ const Login: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Clear any existing tokens on component mount
   useEffect(() => {
-    // Clear localStorage to ensure we're starting fresh
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-  }, []);
+    if (StorageService.hasValidSession()) {
+      navigate("/");
+    }
+  }, [navigate]);
 
   const validateForm = (): boolean => {
     const errors: {

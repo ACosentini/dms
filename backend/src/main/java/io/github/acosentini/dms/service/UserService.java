@@ -43,11 +43,6 @@ public class UserService {
             throw new IllegalArgumentException("Username already exists");
         }
         
-        // Check if email already exists
-        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
-            throw new IllegalArgumentException("Email already exists");
-        }
-        
         // Encode password
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         
@@ -62,14 +57,14 @@ public class UserService {
      * @param password The password
      * @return JWT token
      */
-    public String authenticateUser(String username, String password) {
+    public User authenticateUser(String username, String password) {
         Authentication authentication = authenticationManager.authenticate(
             new UsernamePasswordAuthenticationToken(username, password)
         );
         
         SecurityContextHolder.getContext().setAuthentication(authentication);
         
-        return tokenProvider.generateToken(authentication);
+        return getUserByUsername(username);
     }
     
     /**
@@ -114,7 +109,6 @@ public class UserService {
         User user = getUserById(id);
         
         user.setUsername(userDetails.getUsername());
-        user.setEmail(userDetails.getEmail());
         
         // Only update password if it's provided
         if (userDetails.getPassword() != null && !userDetails.getPassword().isEmpty()) {
@@ -142,15 +136,5 @@ public class UserService {
      */
     public boolean existsByUsername(String username) {
         return userRepository.findByUsername(username).isPresent();
-    }
-    
-    /**
-     * Check if user exists by email
-     * 
-     * @param email The email
-     * @return true if user exists, false otherwise
-     */
-    public boolean existsByEmail(String email) {
-        return userRepository.findByEmail(email).isPresent();
     }
 } 

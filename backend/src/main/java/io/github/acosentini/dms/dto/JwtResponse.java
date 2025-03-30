@@ -2,33 +2,32 @@ package io.github.acosentini.dms.dto;
 
 public class JwtResponse {
     
-    private String token;
-    private String type = "Bearer";
+    private String accessToken;
+    private String refreshToken;
     private Long id;
     private String username;
-    private String email;
 
-    public JwtResponse(String token, Long id, String username, String email) {
-        this.token = token;
+    public JwtResponse(String accessToken, String refreshToken, Long id, String username) {
+        this.accessToken = accessToken;
+        this.refreshToken = refreshToken;
         this.id = id;
         this.username = username;
-        this.email = email;
     }
 
-    public String getToken() {
-        return token;
+    public String getAccessToken() {
+        return accessToken;
     }
 
-    public void setToken(String token) {
-        this.token = token;
+    public void setAccessToken(String accessToken) {
+        this.accessToken = accessToken;
     }
 
-    public String getType() {
-        return type;
+    public String getRefreshToken() {
+        return refreshToken;
     }
 
-    public void setType(String type) {
-        this.type = type;
+    public void setRefreshToken(String refreshToken) {
+        this.refreshToken = refreshToken;
     }
 
     public Long getId() {
@@ -45,13 +44,5 @@ public class JwtResponse {
 
     public void setUsername(String username) {
         this.username = username;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
     }
 } 

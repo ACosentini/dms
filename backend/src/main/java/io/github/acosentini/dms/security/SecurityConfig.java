@@ -39,12 +39,11 @@ public class SecurityConfig {
             // Configure endpoint authorization
             .authorizeRequests()
                 .antMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                // Public endpoints
-                .antMatchers("/auth/**", "/hello").permitAll()
-                // All other endpoints require authentication
-                .anyRequest().authenticated();
-
-        http.addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
+                .antMatchers("/hello").permitAll()  // Public endpoint
+                .antMatchers("/auth/**").permitAll() // Public endpoints
+                .anyRequest().authenticated()
+            .and()
+            .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

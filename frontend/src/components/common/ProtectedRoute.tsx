@@ -1,6 +1,7 @@
 import React from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import CircularProgress from "@mui/material/CircularProgress";
 
 interface ProtectedRouteProps {
   redirectPath?: string;
@@ -12,8 +13,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const { authState } = useAuth();
 
   if (authState.loading) {
-    // TODO:render a loading spinner here
-    return <div>Loading...</div>;
+    return <CircularProgress />;
   }
 
   if (!authState.isAuthenticated) {

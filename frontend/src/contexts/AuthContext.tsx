@@ -4,9 +4,9 @@ import {
   AuthState,
   LoginRequest,
   RegisterRequest,
-  UserInfo,
 } from "../types";
 import AuthService from "../services/auth.service";
+import { mapJwtPayloadToUserInfo } from "../utils/auth.utils";
 
 const AuthContext = createContext<AuthContextType>({
   authState: {
@@ -16,7 +16,7 @@ const AuthContext = createContext<AuthContextType>({
     error: null,
   },
   login: async () => {},
-  register: async () => {},
+  register: async () => ({ success: false }),
   logout: () => {},
 });
 
@@ -25,17 +25,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [authState, setAuthState] = useState<AuthState>({
     isAuthenticated: AuthService.isAuthenticated(),
-    user: AuthService.getCurrentUser(),
+    user: AuthService.getCurrentUser()
+      ? mapJwtPayloadToUserInfo(AuthService.getCurrentUser()!)
+      : null,
     loading: false,
     error: null,
   });
 
   useEffect(() => {
-    const user = AuthService.getCurrentUser();
-    if (user) {
+    const jwtPayload = AuthService.getCurrentUser();
+    if (jwtPayload) {
       setAuthState({
         isAuthenticated: true,
-        user,
+        user: mapJwtPayloadToUserInfo(jwtPayload),
         loading: false,
         error: null,
       });
@@ -46,13 +48,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setAuthState((prev) => ({ ...prev, loading: true, error: null }));
 
     try {
-      const response = await AuthService.login(credentials);
-
-      const user: UserInfo = {
-        id: response.id,
-        username: response.username,
-        email: response.email,
-      };
+      const jwtPayload = await AuthService.login(credentials);
+      const user = mapJwtPayloadToUserInfo(jwtPayload);
 
       setAuthState({
         isAuthenticated: true,
@@ -80,12 +77,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         ...prev,
         loading: false,
       }));
+
+      return { success: true };
     } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message || error.message || "Failed to register";
+
       setAuthState((prev) => ({
         ...prev,
         loading: false,
-        error: error.message || "Failed to register",
+        error: errorMessage,
       }));
+
+      throw error;
     }
   };
 

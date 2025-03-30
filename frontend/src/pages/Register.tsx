@@ -15,35 +15,32 @@ import { Link as RouterLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { RegisterRequest } from "../types";
 import { PersonAdd as RegisterIcon } from "@mui/icons-material";
+import StorageService from "../services/storage.service";
 
 const Register: React.FC = () => {
   const [formData, setFormData] = useState<RegisterRequest>({
     username: "",
-    email: "",
     password: "",
   });
   const [confirmPassword, setConfirmPassword] = useState("");
   const [formErrors, setFormErrors] = useState<{
     username?: string;
-    email?: string;
     password?: string;
     confirmPassword?: string;
   }>({});
 
   const { authState, register } = useAuth();
   const navigate = useNavigate();
-  //TODO: CHECK INSTEAD OF REMOVE
-  // Clear any existing tokens on component mount
+
   useEffect(() => {
-    // Clear localStorage to ensure we're starting fresh
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-  }, []);
+    if (StorageService.hasValidSession()) {
+      navigate("/");
+    }
+  }, [navigate]);
 
   const validateForm = (): boolean => {
     const errors: {
       username?: string;
-      email?: string;
       password?: string;
       confirmPassword?: string;
     } = {};
@@ -55,16 +52,6 @@ const Register: React.FC = () => {
       isValid = false;
     } else if (formData.username.length < 3) {
       errors.username = "Username must be at least 3 characters";
-      isValid = false;
-    }
-
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!formData.email.trim()) {
-      errors.email = "Email is required";
-      isValid = false;
-    } else if (!emailRegex.test(formData.email)) {
-      errors.email = "Please enter a valid email address";
       isValid = false;
     }
 
@@ -104,17 +91,13 @@ const Register: React.FC = () => {
 
     try {
       await register(formData);
-      // If registration is successful, navigate to login
-      if (!authState.error) {
-        navigate("/login", {
-          state: {
-            message:
-              "Registration successful! Please log in with your new account.",
-          },
-        });
-      }
+      navigate("/login", {
+        state: {
+          message:
+            "Registration successful! Please log in with your new account.",
+        },
+      });
     } catch (error) {
-      // Error handling is managed by AuthContext
       console.error("Registration failed:", error);
     }
   };
@@ -173,21 +156,6 @@ const Register: React.FC = () => {
               onChange={handleChange}
               error={!!formErrors.username}
               helperText={formErrors.username}
-              disabled={authState.loading}
-            />
-
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              id="email"
-              label="Email Address"
-              name="email"
-              autoComplete="email"
-              value={formData.email}
-              onChange={handleChange}
-              error={!!formErrors.email}
-              helperText={formErrors.email}
               disabled={authState.loading}
             />
 
