@@ -24,10 +24,8 @@ interface SidebarProps {
 }
 
 const menuItems = [
-  { text: "Dashboard", icon: <Dashboard />, path: "/" },
   { text: "Documents", icon: <Description />, path: "/documents" },
   { text: "Tags", icon: <LocalOffer />, path: "/tags" },
-  { text: "Profile", icon: <Person />, path: "/profile" },
 ];
 
 const Sidebar: React.FC<SidebarProps> = ({

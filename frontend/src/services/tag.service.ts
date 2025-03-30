@@ -1,36 +1,36 @@
-import { Tag, TagRequest, TagResponse } from "../types";
+import { Tag, TagRequest } from "../types/tag.types";
 import { del, get, post, put } from "./api.service";
 
 const TagService = {
-  getAllTags: async (): Promise<Tag[]> => {
-    const response = await get<TagResponse[]>("/tags");
-    return response.data as Tag[];
+  getAllTags: async () => {
+    const response = await get<Tag[]>("/tags");
+    return response.data;
   },
 
-  getTagById: async (id: number): Promise<Tag> => {
-    const response = await get<TagResponse>(`/tags/${id}`);
-    return response.data as Tag;
+  getTagById: async (id: number) => {
+    const response = await get<Tag>(`/tags/${id}`);
+    return response.data;
   },
 
-  createTag: async (tagData: TagRequest): Promise<Tag> => {
-    const response = await post<TagResponse, TagRequest>("/tags", tagData);
-    return response.data as Tag;
+  createTag: async (tagData: TagRequest) => {
+    const response = await post<Tag, TagRequest>("/tags", tagData);
+    return response.data;
   },
 
-  updateTag: async (id: number, tagData: TagRequest): Promise<Tag> => {
-    const response = await put<TagResponse, TagRequest>(`/tags/${id}`, tagData);
-    return response.data as Tag;
+  updateTag: async (id: number, tagData: TagRequest) => {
+    const response = await put<Tag, TagRequest>(`/tags/${id}`, tagData);
+    return response.data;
   },
 
-  deleteTag: async (id: number): Promise<void> => {
+  deleteTag: async (id: number) => {
     await del(`/tags/${id}`);
   },
 
-  searchTags: async (keyword: string): Promise<Tag[]> => {
-    const response = await get<TagResponse[]>("/tags/search", {
+  searchTags: async (keyword: string) => {
+    const response = await get<Tag[]>("/tags/search", {
       params: { keyword },
     });
-    return response.data as Tag[];
+    return response.data;
   },
 };
 

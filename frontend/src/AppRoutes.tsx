@@ -7,11 +7,8 @@ import LoadingSpinner from "./components/common/LoadingSpinner";
 
 const Login = React.lazy(() => import("./pages/Login"));
 const Register = React.lazy(() => import("./pages/Register"));
-const Dashboard = React.lazy(() => import("./pages/Dashboard"));
 const DocumentList = React.lazy(() => import("./pages/DocumentList"));
-const DocumentDetail = React.lazy(() => import("./pages/DocumentDetail"));
 const TagManagement = React.lazy(() => import("./pages/TagManagement"));
-const Profile = React.lazy(() => import("./pages/Profile"));
 const NotFound = React.lazy(() => import("./pages/NotFound"));
 
 const AppRoutes: React.FC = () => {
@@ -38,11 +35,9 @@ const AppRoutes: React.FC = () => {
         {/* Protected routes with layout */}
         <Route element={<ProtectedRoute />}>
           <Route element={<MainLayout />}>
-            <Route path="/" element={<Dashboard />} />
+            <Route path="/" element={<DocumentList />} />
             <Route path="/documents" element={<DocumentList />} />
-            <Route path="/documents/:id" element={<DocumentDetail />} />
             <Route path="/tags" element={<TagManagement />} />
-            <Route path="/profile" element={<Profile />} />
           </Route>
         </Route>
 

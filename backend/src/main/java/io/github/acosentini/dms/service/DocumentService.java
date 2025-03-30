@@ -107,14 +107,27 @@ public class DocumentService {
     }
     
     /**
-     * Search documents by name
-     * 
-     * @param keyword The search keyword
-     * @param pageable Pagination information
-     * @return Page of documents
+     * Search documents with multiple criteria
      */
-    public Page<Document> searchDocuments(String keyword, Pageable pageable) {
-        return documentRepository.findByNameContaining(keyword, pageable);
+    public Page<Document> searchDocuments(
+            Long userId,
+            String searchTerm,
+            LocalDateTime startDate,
+            LocalDateTime endDate,
+            Pageable pageable) {
+        
+        // If we have a date range, use that search
+        if (startDate != null && endDate != null) {
+            return documentRepository.findByDateRange(userId, startDate, endDate, pageable);
+        }
+        
+        // If we have a search term, use the general search
+        if (searchTerm != null && !searchTerm.trim().isEmpty()) {
+            return documentRepository.searchDocuments(searchTerm.trim(), userId, pageable);
+        }
+        
+        // Default to all documents for the user
+        return documentRepository.findByOwnerId(userId, pageable);
     }
     
     /**

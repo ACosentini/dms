@@ -12,14 +12,6 @@ export interface Document {
   owner?: User;
 }
 
-export interface DocumentResponse {
-  id: number;
-  name: string;
-  contentType: string;
-  uploadDate: string;
-  tagIds: number[];
-}
-
 export interface DocumentUploadRequest {
   file: File;
   name: string;
@@ -32,11 +24,12 @@ export interface DocumentUpdateRequest {
 }
 
 export interface DocumentSearchParams {
-  keyword?: string;
-  tagId?: number;
+  searchTerm?: string;
+  startDate?: string;
+  endDate?: string;
+  tagIds?: number[];
   page?: number;
   size?: number;
-  sort?: string;
 }
 
 export interface DocumentListState {

@@ -49,12 +49,14 @@ public class JwtTokenProvider {
      * @return The JWT token
      */
     public String generateAccessToken(User user) {
+        Claims claims = Jwts.claims().setSubject(user.getUsername());
+        claims.put("userId", user.getId());
+        
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
-
+        
         return Jwts.builder()
-                .setSubject(user.getId().toString())
-                .claim("username", user.getUsername())
+                .setClaims(claims)
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
                 .signWith(SignatureAlgorithm.HS512, jwtSecret)
@@ -78,13 +80,12 @@ public class JwtTokenProvider {
      * @param token The JWT token
      * @return The username
      */
-    public String getUserIdFromToken(String token) {
-        Claims claims = Jwts.parser()
+    public String getUsername(String token) {
+        return Jwts.parser()
                 .setSigningKey(jwtSecret)
                 .parseClaimsJws(token)
-                .getBody();
-        
-        return claims.getSubject();
+                .getBody()
+                .getSubject();
     }
 
     /**
@@ -148,7 +149,7 @@ public class JwtTokenProvider {
      * @return The authentication object
      */
     public Authentication getAuthentication(String token) {
-        String username = getUserIdFromToken(token);
+        String username = getUsername(token);
         UserDetails userDetails = userDetailsService.loadUserByUsername(username);
         return new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
     }

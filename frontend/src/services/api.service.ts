@@ -74,6 +74,12 @@ apiClient.interceptors.response.use(
       StorageService.clearAuth();
       window.dispatchEvent(new CustomEvent(AUTH_EVENTS.UNAUTHORIZED));
     }
+    console.error("API Error:", {
+      url: error.config?.url,
+      method: error.config?.method,
+      status: error.response?.status,
+      data: error.response?.data,
+    });
     return Promise.reject(error);
   }
 );

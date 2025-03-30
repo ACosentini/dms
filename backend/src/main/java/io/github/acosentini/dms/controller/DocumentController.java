@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -24,6 +25,7 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -226,8 +228,10 @@ public class DocumentController {
     }
     
     @GetMapping("/search")
-    public ResponseEntity<List<DocumentResponse>> searchDocuments(
-            @RequestParam String keyword,
+    public ResponseEntity<Page<DocumentResponse>> searchDocuments(
+            @RequestParam(required = false) String searchTerm,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
             Pageable pageable) {
         
         // Get current authenticated user
@@ -236,19 +240,22 @@ public class DocumentController {
         User user = userService.getUserByUsername(username);
         
         // Search documents
-        Page<Document> documents = documentService.searchDocuments(keyword, pageable);
+        Page<Document> documents = documentService.searchDocuments(
+            user.getId(),
+            searchTerm,
+            startDate,
+            endDate,
+            pageable
+        );
         
-        // Filter documents by user and convert to list
-        List<DocumentResponse> response = documents.getContent().stream()
-            .filter(document -> document.getOwner() != null && document.getOwner().getId().equals(user.getId()))
-            .map(document -> new DocumentResponse(
-                document.getId(),
-                document.getName(),
-                document.getContentType(),
-                document.getUploadDate(),
-                document.getTags().stream().map(tag -> tag.getId()).collect(Collectors.toSet())
-            ))
-            .collect(Collectors.toList());
+        // Map to response
+        Page<DocumentResponse> response = documents.map(document -> new DocumentResponse(
+            document.getId(),
+            document.getName(),
+            document.getContentType(),
+            document.getUploadDate(),
+            document.getTags().stream().map(tag -> tag.getId()).collect(Collectors.toSet())
+        ));
         
         return ResponseEntity.ok(response);
     }

@@ -39,8 +39,8 @@ public class SecurityConfig {
             // Configure endpoint authorization
             .authorizeRequests()
                 .antMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                .antMatchers("/hello").permitAll()  // Public endpoint
-                .antMatchers("/auth/**").permitAll() // Public endpoints
+                .antMatchers("/hello").permitAll()
+                .antMatchers("/auth/**").permitAll()                
                 .anyRequest().authenticated()
             .and()
             .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);

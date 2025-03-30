@@ -25,20 +25,54 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         
-        logger.info("Processing request: " + request.getMethod() + " " + request.getRequestURI());
+        logger.info("Processing request: {} {}", request.getMethod(), request.getRequestURI());
         
         // Skip token validation for public endpoints
         String path = request.getRequestURI().substring(request.getContextPath().length());
         if (path.startsWith("/hello") || path.startsWith("/auth/")) {
+            logger.info("Skipping authentication for public path: {}", path);
             filterChain.doFilter(request, response);
             return;
         }
         
         String token = jwtTokenProvider.resolveToken(request);
+        logger.info("Token found: {}", token != null ? "yes" : "no");
         
-        if (token != null && jwtTokenProvider.validateToken(token)) {
+        if (token == null) {
+            logger.warn("No token found in request");
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            return;
+        }
+        
+        try {
+            boolean isValid = jwtTokenProvider.validateToken(token);
+            logger.info("Token validation result: {}", isValid);
+            
+            if (!isValid) {
+                logger.warn("Invalid token");
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                return;
+            }
+            
             Authentication auth = jwtTokenProvider.getAuthentication(token);
+            logger.info("Authentication created: {} for user: {}", 
+                auth != null, 
+                auth != null ? auth.getName() : "none"
+            );
+            
+            if (auth == null) {
+                logger.warn("Could not create authentication from token");
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                return;
+            }
+            
             SecurityContextHolder.getContext().setAuthentication(auth);
+            logger.info("Authentication set in SecurityContext");
+            
+        } catch (Exception e) {
+            logger.error("Could not set user authentication", e);
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            return;
         }
         
         filterChain.doFilter(request, response);

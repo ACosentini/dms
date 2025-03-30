@@ -1,6 +1,5 @@
 import {
   Document,
-  DocumentResponse,
   DocumentSearchParams,
   DocumentUpdateRequest,
   DocumentUploadRequest,
@@ -20,30 +19,30 @@ const DocumentService = {
   },
 
   getDocumentById: async (id: number): Promise<Document> => {
-    const response = await get<DocumentResponse>(`/documents/${id}`);
-    return response.data as Document;
+    const response = await get<Document>(`/documents/${id}`);
+    return response.data;
   },
 
   uploadDocument: async (
     documentData: DocumentUploadRequest
   ): Promise<Document> => {
     const { file, name, tagIds } = documentData;
-    const response = await uploadFile<DocumentResponse>("/documents", file, {
+    const response = await uploadFile<Document>("/documents", file, {
       name,
       tagIds: tagIds || [],
     });
-    return response.data as Document;
+    return response.data;
   },
 
   updateDocument: async (
     id: number,
     documentData: DocumentUpdateRequest
   ): Promise<Document> => {
-    const response = await put<DocumentResponse, DocumentUpdateRequest>(
+    const response = await put<Document, DocumentUpdateRequest>(
       `/documents/${id}`,
       documentData
     );
-    return response.data as Document;
+    return response.data;
   },
 
   deleteDocument: async (id: number): Promise<void> => {
@@ -55,7 +54,7 @@ const DocumentService = {
       headers: {
         Accept: "application/octet-stream",
       },
-      // Need to specify responseType in axios options
+      // TODO: Need to specify responseType in axios options
     });
     return response.data;
   },
@@ -94,21 +93,21 @@ const DocumentService = {
     documentId: number,
     tagId: number
   ): Promise<Document> => {
-    const response = await post<DocumentResponse, null>(
+    const response = await post<Document, null>(
       `/documents/${documentId}/tags/${tagId}`,
       null
     );
-    return response.data as Document;
+    return response.data;
   },
 
   removeTagFromDocument: async (
     documentId: number,
     tagId: number
   ): Promise<Document> => {
-    const response = await del<DocumentResponse>(
+    const response = await del<Document>(
       `/documents/${documentId}/tags/${tagId}`
     );
-    return response.data as Document;
+    return response.data;
   },
 };
 
