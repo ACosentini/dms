@@ -5,7 +5,7 @@ import {
   Toolbar,
   IconButton,
   Typography,
-  Drawer,
+  Container,
   Tooltip,
 } from "@mui/material";
 import {
@@ -75,12 +75,15 @@ const MainLayout: React.FC = () => {
         component="main"
         sx={{
           flexGrow: 1,
-          p: 3,
           width: { sm: `calc(100% - ${DRAWER_WIDTH}px)` },
           mt: 8,
         }}
       >
-        <Outlet />
+        <Container maxWidth="xl">
+          <Box sx={{ py: 6 }}>
+            <Outlet />
+          </Box>
+        </Container>
       </Box>
     </Box>
   );

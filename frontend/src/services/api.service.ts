@@ -230,12 +230,68 @@ export const uploadFile = async <T>(
   }
 };
 
+export const downloadFile = async (
+  url: string,
+  filename?: string
+): Promise<void> => {
+  try {
+    const config: AxiosRequestConfig = {
+      responseType: "blob",
+      headers: {
+        Accept: "application/octet-stream",
+      },
+    };
+
+    // Add authorization header if token exists
+    const token = StorageService.getAccessToken();
+    if (token) {
+      config.headers = {
+        ...config.headers,
+        Authorization: `Bearer ${token}`,
+      };
+    }
+
+    const response = await apiClient.get(url, config);
+
+    // Create a blob URL and trigger download
+    const blob = new Blob([response.data], {
+      type: response.headers["content-type"],
+    });
+    const downloadUrl = window.URL.createObjectURL(blob);
+
+    // Get filename from content-disposition header or use provided filename or default
+    let downloadFilename = filename || "download";
+    const contentDisposition = response.headers["content-disposition"];
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+      if (filenameMatch) {
+        downloadFilename = filenameMatch[1];
+      }
+    }
+
+    // Create and trigger download link
+    const link = document.createElement("a");
+    link.href = downloadUrl;
+    link.setAttribute("download", downloadFilename);
+    document.body.appendChild(link);
+    link.click();
+
+    // Clean up
+    window.URL.revokeObjectURL(downloadUrl);
+    document.body.removeChild(link);
+  } catch (error) {
+    const axiosError = error as AxiosError;
+    throw new Error(axiosError.message);
+  }
+};
+
 const apiService = {
   get,
   post,
   put,
   del,
   uploadFile,
+  downloadFile,
 };
 
 export default apiService;

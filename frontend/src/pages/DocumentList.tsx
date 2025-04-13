@@ -12,8 +12,10 @@ import {
   IconButton,
   Typography,
   Alert,
+  Button,
 } from "@mui/material";
-import { Info as InfoIcon } from "@mui/icons-material";
+import { Download as DownloadIcon, Add as AddIcon } from "@mui/icons-material";
+
 import { Document, Tag } from "../types";
 import DocumentService from "../services/document.service";
 import TagService from "../services/tag.service";
@@ -24,6 +26,8 @@ import StorageService from "../services/storage.service";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import { Dayjs } from "dayjs";
 import { dateToISOString, formatDate } from "../utils/date.utils";
+import UploadDocumentDialog from "../components/documents/UploadDocumentDialog";
+import { getErrorMessage } from "../utils/error.utils";
 
 const DocumentList: React.FC = () => {
   const navigate = useNavigate();
@@ -45,13 +49,15 @@ const DocumentList: React.FC = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+
   useEffect(() => {
     const loadTags = async () => {
       try {
         const tagsResponse = await TagService.getAllTags();
         setTags(tagsResponse);
-      } catch (err: any) {
-        setError(err.message || "Failed to fetch tags");
+      } catch (err) {
+        setError(getErrorMessage(err, "Failed to fetch tags"));
       }
     };
     loadTags();
@@ -76,8 +82,8 @@ const DocumentList: React.FC = () => {
         });
         setDocuments(docsResponse.content);
         setError(null);
-      } catch (err: any) {
-        setError(err.message || "Failed to fetch documents");
+      } catch (err) {
+        setError(getErrorMessage(err, "Failed to fetch documents"));
       } finally {
         setLoading(false);
       }
@@ -103,19 +109,57 @@ const DocumentList: React.FC = () => {
 
   const handleDownload = async (document: Document) => {
     try {
+      setError(null);
       await DocumentService.downloadDocument(document.id);
-    } catch (err: any) {
-      setError(err.message || "Failed to download document");
+    } catch (err) {
+      console.error("Download error:", err);
+      setError(getErrorMessage(err, "Failed to download document"));
+    }
+  };
+
+  const handleOpenUploadDialog = () => {
+    setUploadDialogOpen(true);
+  };
+
+  const handleCloseUploadDialog = () => {
+    setUploadDialogOpen(false);
+  };
+
+  // Method to refresh documents after upload
+  const refreshDocuments = async () => {
+    try {
+      setLoading(true);
+      const docsResponse = await DocumentService.searchDocuments({
+        searchTerm,
+        startDate: dateToISOString(startDate),
+        endDate: dateToISOString(endDate),
+        tagIds: selectedTags.map((tag) => tag.id),
+        page,
+        size: rowsPerPage,
+      });
+      setDocuments(docsResponse.content);
+      setError(null);
+    } catch (err) {
+      setError(getErrorMessage(err, "Failed to fetch documents"));
+    } finally {
+      setLoading(false);
     }
   };
 
   if (loading) return <LoadingSpinner />;
 
   return (
-    <Box className="page-container">
-      <Typography variant="h4" gutterBottom>
-        Documents
-      </Typography>
+    <>
+      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
+        <Typography variant="h5">Documents</Typography>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={handleOpenUploadDialog}
+        >
+          Add Document
+        </Button>
+      </Box>
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
@@ -154,7 +198,7 @@ const DocumentList: React.FC = () => {
                 <TableCell>{document.contentType}</TableCell>
                 <TableCell>
                   <IconButton onClick={() => setSelectedDocument(document)}>
-                    <InfoIcon />
+                    <DownloadIcon />
                   </IconButton>
                 </TableCell>
               </TableRow>
@@ -182,7 +226,17 @@ const DocumentList: React.FC = () => {
         onClose={() => setSelectedDocument(null)}
         onDownload={handleDownload}
       />
-    </Box>
+
+      <UploadDocumentDialog
+        open={uploadDialogOpen}
+        onClose={handleCloseUploadDialog}
+        availableTags={tags}
+        onSuccess={() => {
+          handleCloseUploadDialog();
+          refreshDocuments();
+        }}
+      />
+    </>
   );
 };
 

@@ -5,7 +5,7 @@ import {
   DocumentUploadRequest,
   PaginatedResponse,
 } from "../types";
-import { del, get, post, put, uploadFile } from "./api.service";
+import { del, get, post, put, uploadFile, downloadFile } from "./api.service";
 
 const DocumentService = {
   getAllDocuments: async (
@@ -49,14 +49,8 @@ const DocumentService = {
     await del(`/documents/${id}`);
   },
 
-  downloadDocument: async (id: number): Promise<Blob> => {
-    const response = await get<Blob>(`/documents/download/${id}`, {
-      headers: {
-        Accept: "application/octet-stream",
-      },
-      // TODO: Need to specify responseType in axios options
-    });
-    return response.data;
+  downloadDocument: async (id: number): Promise<void> => {
+    return downloadFile(`/documents/download/${id}`, `document_${id}`);
   },
 
   searchDocuments: async (

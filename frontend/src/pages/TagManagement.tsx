@@ -25,6 +25,7 @@ import {
 import { Tag } from "../types/tag.types";
 import TagService from "../services/tag.service";
 import LoadingSpinner from "../components/common/LoadingSpinner";
+import { getErrorMessage } from "../utils/error.utils";
 
 const TagManagement: React.FC = () => {
   const [tags, setTags] = useState<Tag[]>([]);
@@ -41,7 +42,7 @@ const TagManagement: React.FC = () => {
       setTags(tags);
       setError(null);
     } catch (err) {
-      setError("Failed to load tags");
+      setError(getErrorMessage(err, "Failed to load tags"));
       console.error("Error loading tags:", err);
     } finally {
       setLoading(false);
@@ -79,7 +80,12 @@ const TagManagement: React.FC = () => {
       handleCloseDialog();
       loadTags();
     } catch (err) {
-      setError(`Failed to ${editingTag ? "update" : "create"} tag`);
+      setError(
+        getErrorMessage(
+          err,
+          `Failed to ${editingTag ? "update" : "create"} tag`
+        )
+      );
       console.error("Error saving tag:", err);
     }
   };
@@ -90,7 +96,7 @@ const TagManagement: React.FC = () => {
         await TagService.deleteTag(tagId);
         loadTags();
       } catch (err) {
-        setError("Failed to delete tag");
+        setError(getErrorMessage(err, "Failed to delete tag"));
         console.error("Error deleting tag:", err);
       }
     }
@@ -99,7 +105,7 @@ const TagManagement: React.FC = () => {
   if (loading) return <LoadingSpinner />;
 
   return (
-    <Box sx={{ p: 3 }}>
+    <>
       <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
         <Typography variant="h5">Tag Management</Typography>
         <Button
@@ -169,7 +175,7 @@ const TagManagement: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </>
   );
 };
 
