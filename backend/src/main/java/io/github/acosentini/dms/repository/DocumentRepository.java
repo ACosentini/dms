@@ -24,6 +24,13 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
     
     @Query("SELECT d FROM Document d WHERE d.contentType LIKE %:contentType% AND d.owner.id = :userId")
     List<Document> findByContentTypeAndUserId(@Param("contentType") String contentType, @Param("userId") Long userId);
+
+    @Query("SELECT DISTINCT d FROM Document d JOIN d.tags t WHERE d.owner.id = :userId AND t.id IN :tagIds")
+Page<Document> findByOwnerIdAndTagsIdIn(
+    @Param("userId") Long userId,
+    @Param("tagIds") List<Long> tagIds,
+    Pageable pageable
+);
     
     Page<Document> findByOwnerId(Long userId, Pageable pageable);
     

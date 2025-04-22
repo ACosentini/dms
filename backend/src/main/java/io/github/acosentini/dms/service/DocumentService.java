@@ -114,7 +114,13 @@ public class DocumentService {
             String searchTerm,
             LocalDateTime startDate,
             LocalDateTime endDate,
+            List<Long> tagIds,
             Pageable pageable) {
+
+        // If we have tagIds, use tag search
+         if (tagIds != null && !tagIds.isEmpty()) {
+        return documentRepository.findByOwnerIdAndTagsIdIn(userId, tagIds, pageable);
+         }
         
         // If we have a date range, use that search
         if (startDate != null && endDate != null) {

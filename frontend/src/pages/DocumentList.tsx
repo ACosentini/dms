@@ -29,6 +29,9 @@ import { dateToISOString, formatDate } from "../utils/date.utils";
 import UploadDocumentDialog from "../components/documents/UploadDocumentDialog";
 import { getErrorMessage } from "../utils/error.utils";
 
+// Define filter types
+type FilterType = "text" | "date" | "tags";
+
 const DocumentList: React.FC = () => {
   const navigate = useNavigate();
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -38,6 +41,9 @@ const DocumentList: React.FC = () => {
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Add filter type state
+  const [filterType, setFilterType] = useState<FilterType>("text");
 
   // Search states
   const [searchTerm, setSearchTerm] = useState("");
@@ -100,11 +106,18 @@ const DocumentList: React.FC = () => {
     rowsPerPage,
   ]);
 
+  // Add handler for filter type changes
+  const handleFilterTypeChange = (newType: FilterType) => {
+    setFilterType(newType);
+  };
+
   const handleSearchClear = () => {
     setSearchTerm("");
     setStartDate(null);
     setEndDate(null);
     setSelectedTags([]);
+    // Reset filter type when clearing
+    setFilterType("text");
   };
 
   const handleDownload = async (document: Document) => {
@@ -168,6 +181,8 @@ const DocumentList: React.FC = () => {
       )}
 
       <DocumentSearch
+        filterType={filterType}
+        onFilterTypeChange={handleFilterTypeChange}
         searchTerm={searchTerm}
         startDate={startDate}
         endDate={endDate}

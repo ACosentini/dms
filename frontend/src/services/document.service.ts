@@ -56,16 +56,18 @@ const DocumentService = {
   searchDocuments: async (
     params: DocumentSearchParams
   ): Promise<PaginatedResponse<Document>> => {
-    const filteredParams = Object.fromEntries(
-      Object.entries(params).filter(([_, value]) => value !== undefined)
-    ) as Record<string, string | number | boolean>;
-
-    const response = await get<PaginatedResponse<Document>>(
-      "/documents/search",
-      {
-        params: filteredParams,
+    // Filter out undefined values
+    const filteredParams: Partial<DocumentSearchParams> = {};
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined) {
+        filteredParams[key as keyof DocumentSearchParams] = value;
       }
-    );
+    });
+
+    const response = await post<
+      PaginatedResponse<Document>,
+      Partial<DocumentSearchParams>
+    >("/documents/search", filteredParams);
     return response.data;
   },
 

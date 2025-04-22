@@ -26,7 +26,6 @@ let refreshQueue: Promise<void>[] = [];
 apiClient.interceptors.request.use(
   async (config) => {
     const token = StorageService.getAccessToken();
-    console.log("Making request with token:", token);
 
     // Only attempt refresh if there's a token and it's expired
     if (

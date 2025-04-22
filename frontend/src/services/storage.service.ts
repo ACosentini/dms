@@ -87,7 +87,13 @@ class StorageService {
 
   isTokenExpired(): boolean {
     if (!this.decodedToken) return true;
-    return this.decodedToken.exp * 1000 < Date.now() + 30000; // 30 seconds buffer
+
+    const now = Date.now();
+    const expiryTime = this.decodedToken.exp * 1000;
+
+    // Token is expired if current time is past expiry time
+    // Use a small buffer (30 seconds) to refresh slightly before expiration
+    return now > expiryTime - 30000;
   }
 
   clearAuth(): void {
