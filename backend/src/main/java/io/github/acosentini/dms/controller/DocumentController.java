@@ -28,6 +28,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -232,8 +233,8 @@ public class DocumentController {
     @GetMapping("/search")
     public ResponseEntity<Page<DocumentResponse>> searchDocuments(
             @RequestParam(required = false) String searchTerm,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) ZonedDateTime endDate,
             @RequestParam(required = false) List<Long> tagIds,
             Pageable pageable) {
         
@@ -265,41 +266,41 @@ public class DocumentController {
     }
 
     @PostMapping("/search")
-public ResponseEntity<Page<DocumentResponse>> searchDocumentsPost(
-        @RequestBody DocumentSearchRequest searchRequest) {
-    
-    // Get current authenticated user
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    String username = authentication.getName();
-    User user = userService.getUserByUsername(username);
-    
-    // Create pageable from request if provided
-    Pageable pageable = Pageable.unpaged();
-    if (searchRequest.getPage() != null && searchRequest.getSize() != null) {
-        pageable = PageRequest.of(searchRequest.getPage(), searchRequest.getSize());
+    public ResponseEntity<Page<DocumentResponse>> searchDocumentsPost(
+            @RequestBody DocumentSearchRequest searchRequest) {
+        
+        // Get current authenticated user
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        User user = userService.getUserByUsername(username);
+        
+        // Create pageable from request if provided
+        Pageable pageable = Pageable.unpaged();
+        if (searchRequest.getPage() != null && searchRequest.getSize() != null) {
+            pageable = PageRequest.of(searchRequest.getPage(), searchRequest.getSize());
+        }
+        
+        // Search documents
+        Page<Document> documents = documentService.searchDocuments(
+            user.getId(),
+            searchRequest.getSearchTerm(),
+            searchRequest.getStartDate(),
+            searchRequest.getEndDate(),
+            searchRequest.getTagIds(),
+            pageable
+        );
+        
+        // Map to response
+        Page<DocumentResponse> response = documents.map(document -> new DocumentResponse(
+            document.getId(),
+            document.getName(),
+            document.getContentType(),
+            document.getUploadDate(),
+            document.getTags().stream().map(tag -> tag.getId()).collect(Collectors.toSet())
+        ));
+        
+        return ResponseEntity.ok(response);
     }
-    
-    // Search documents
-    Page<Document> documents = documentService.searchDocuments(
-        user.getId(),
-        searchRequest.getSearchTerm(),
-        searchRequest.getStartDate(),
-        searchRequest.getEndDate(),
-        searchRequest.getTagIds(),
-        pageable
-    );
-    
-    // Map to response
-    Page<DocumentResponse> response = documents.map(document -> new DocumentResponse(
-        document.getId(),
-        document.getName(),
-        document.getContentType(),
-        document.getUploadDate(),
-        document.getTags().stream().map(tag -> tag.getId()).collect(Collectors.toSet())
-    ));
-    
-    return ResponseEntity.ok(response);
-}
     
     @GetMapping("/tag/{tagId}")
     public ResponseEntity<List<DocumentResponse>> getDocumentsByTag(

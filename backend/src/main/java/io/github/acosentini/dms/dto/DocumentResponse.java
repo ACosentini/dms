@@ -1,6 +1,6 @@
 package io.github.acosentini.dms.dto;
 
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.Set;
 
 public class DocumentResponse {
@@ -8,13 +8,13 @@ public class DocumentResponse {
     private Long id;
     private String name;
     private String contentType;
-    private LocalDateTime uploadDate;
+    private ZonedDateTime uploadDate;
     private Set<Long> tagIds;
 
     public DocumentResponse() {
     }
 
-    public DocumentResponse(Long id, String name, String contentType, LocalDateTime uploadDate, Set<Long> tagIds) {
+    public DocumentResponse(Long id, String name, String contentType, ZonedDateTime uploadDate, Set<Long> tagIds) {
         this.id = id;
         this.name = name;
         this.contentType = contentType;
@@ -46,11 +46,11 @@ public class DocumentResponse {
         this.contentType = contentType;
     }
 
-    public LocalDateTime getUploadDate() {
+    public ZonedDateTime getUploadDate() {
         return uploadDate;
     }
 
-    public void setUploadDate(LocalDateTime uploadDate) {
+    public void setUploadDate(ZonedDateTime uploadDate) {
         this.uploadDate = uploadDate;
     }
 

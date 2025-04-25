@@ -13,7 +13,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -49,7 +50,7 @@ public class DocumentService {
         document.setEncryptedPath(documentDTO.getFilePath());
         document.setSize(documentDTO.getFileSize());
         document.setContentType(documentDTO.getFileType());
-        document.setUploadDate(LocalDateTime.now());
+        document.setUploadDate(ZonedDateTime.now(ZoneOffset.UTC));
         document.setOwner(user);
         
         // Process tags
@@ -112,15 +113,15 @@ public class DocumentService {
     public Page<Document> searchDocuments(
             Long userId,
             String searchTerm,
-            LocalDateTime startDate,
-            LocalDateTime endDate,
+            ZonedDateTime startDate,
+            ZonedDateTime endDate,
             List<Long> tagIds,
             Pageable pageable) {
 
         // If we have tagIds, use tag search
-         if (tagIds != null && !tagIds.isEmpty()) {
-        return documentRepository.findByOwnerIdAndTagsIdIn(userId, tagIds, pageable);
-         }
+        if (tagIds != null && !tagIds.isEmpty()) {
+            return documentRepository.findByOwnerIdAndTagsIdIn(userId, tagIds, pageable);
+        }
         
         // If we have a date range, use that search
         if (startDate != null && endDate != null) {
@@ -147,8 +148,15 @@ public class DocumentService {
     public Document updateDocument(Long id, DocumentDTO documentDTO) {
         Document document = getDocumentById(id);
         
-        document.setName(documentDTO.getName());
-        document.setEncryptedPath(documentDTO.getFilePath());
+        // Update name if provided
+        if (documentDTO.getName() != null) {
+            document.setName(documentDTO.getName());
+        }
+        
+        // Only update encrypted path if explicitly provided
+        if (documentDTO.getFilePath() != null && !documentDTO.getFilePath().isEmpty()) {
+            document.setEncryptedPath(documentDTO.getFilePath());
+        }
         
         // Update tags if provided
         if (documentDTO.getTagIds() != null) {

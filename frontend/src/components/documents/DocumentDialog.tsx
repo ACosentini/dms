@@ -116,7 +116,6 @@ const DocumentDialog: React.FC<DocumentDialogProps> = ({
     }
   }, [currentDocument, document, newName, onUpdateSuccess]);
 
-  // Return null early if we don't have the required data
   if (!open || !currentDocument) return null;
 
   const documentTags = tags.filter((tag) => documentTagIds.includes(tag.id));

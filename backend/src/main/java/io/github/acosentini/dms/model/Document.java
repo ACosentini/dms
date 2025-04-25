@@ -1,7 +1,8 @@
 package io.github.acosentini.dms.model;
 
 import javax.persistence.*;
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
+import java.time.ZoneOffset;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -28,7 +29,7 @@ public class Document {
     private String contentType;
 
     @Column(name = "upload_date")
-    private LocalDateTime uploadDate;
+    private ZonedDateTime uploadDate;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
@@ -52,7 +53,7 @@ public class Document {
         this.contentType = contentType;
         this.size = size;
         this.owner = owner;
-        this.uploadDate = LocalDateTime.now();
+        this.uploadDate = ZonedDateTime.now(ZoneOffset.UTC);
     }
 
     // Getters and Setters
@@ -104,11 +105,11 @@ public class Document {
         this.size = size;
     }
 
-    public LocalDateTime getUploadDate() {
+    public ZonedDateTime getUploadDate() {
         return uploadDate;
     }
 
-    public void setUploadDate(LocalDateTime uploadDate) {
+    public void setUploadDate(ZonedDateTime uploadDate) {
         this.uploadDate = uploadDate;
     }
 

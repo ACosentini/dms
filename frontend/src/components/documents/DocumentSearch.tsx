@@ -168,6 +168,7 @@ const DocumentSearch: React.FC<DocumentSearchProps> = ({
                   label="Start Date"
                   value={startDate}
                   onChange={onStartDateChange}
+                  format="DD/MM/YYYY"
                   slotProps={{
                     textField: {
                       size: "medium",
@@ -186,6 +187,7 @@ const DocumentSearch: React.FC<DocumentSearchProps> = ({
                   label="End Date"
                   value={endDate}
                   onChange={onEndDateChange}
+                  format="DD/MM/YYYY"
                   slotProps={{
                     textField: {
                       size: "medium",

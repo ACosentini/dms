@@ -1,12 +1,12 @@
 package io.github.acosentini.dms.dto;
 
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 public class DocumentSearchRequest {
     private String searchTerm;
-    private LocalDateTime startDate;
-    private LocalDateTime endDate;
+    private ZonedDateTime startDate;
+    private ZonedDateTime endDate;
     private List<Long> tagIds;
     private Integer page;
     private Integer size;
@@ -22,19 +22,19 @@ public class DocumentSearchRequest {
         this.searchTerm = searchTerm;
     }
     
-    public LocalDateTime getStartDate() {
+    public ZonedDateTime getStartDate() {
         return startDate;
     }
     
-    public void setStartDate(LocalDateTime startDate) {
+    public void setStartDate(ZonedDateTime startDate) {
         this.startDate = startDate;
     }
     
-    public LocalDateTime getEndDate() {
+    public ZonedDateTime getEndDate() {
         return endDate;
     }
     
-    public void setEndDate(LocalDateTime endDate) {
+    public void setEndDate(ZonedDateTime endDate) {
         this.endDate = endDate;
     }
     
