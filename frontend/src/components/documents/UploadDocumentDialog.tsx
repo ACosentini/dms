@@ -146,9 +146,11 @@ const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
             getOptionLabel={(option) => option.name}
             isOptionEqualToValue={(option, value) => option.id === value.id}
             renderTags={(value, getTagProps) =>
-              value.map((option, index) => (
-                <Chip label={option.name} {...getTagProps({ index })} />
-              ))
+              value.map((option, index) => {
+                const tagProps = getTagProps({ index });
+                const { key, ...chipProps } = tagProps;
+                return <Chip key={key} label={option.name} {...chipProps} />;
+              })
             }
             renderInput={(params) => (
               <TextField

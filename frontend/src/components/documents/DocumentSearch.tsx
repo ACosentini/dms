@@ -119,7 +119,7 @@ const DocumentSearch: React.FC<DocumentSearchProps> = ({
 
   return (
     <Box sx={{ mb: 3 }}>
-      <Grid container spacing={2} alignItems="center">
+      <Grid container spacing={2} alignItems="start">
         <Grid size={{ xs: 12, sm: 3, md: 2 }}>
           <FormControl fullWidth>
             <InputLabel>Filter Type</InputLabel>

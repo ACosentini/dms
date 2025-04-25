@@ -13,14 +13,21 @@ import {
   Typography,
   Alert,
   Button,
+  Tooltip,
 } from "@mui/material";
-import { Download as DownloadIcon, Add as AddIcon } from "@mui/icons-material";
+import {
+  Download as DownloadIcon,
+  Add as AddIcon,
+  Delete as DeleteIcon,
+  Info as InfoIcon,
+} from "@mui/icons-material";
 
 import { Document, Tag } from "../types";
 import DocumentService from "../services/document.service";
 import TagService from "../services/tag.service";
 import DocumentSearch from "../components/documents/DocumentSearch";
 import DocumentDialog from "../components/documents/DocumentDialog";
+import DeleteDialog from "../components/documents/DeleteDialog";
 import { useNavigate } from "react-router-dom";
 import StorageService from "../services/storage.service";
 import LoadingSpinner from "../components/common/LoadingSpinner";
@@ -41,6 +48,7 @@ const DocumentList: React.FC = () => {
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [editMode, setEditMode] = useState(false);
 
   // Add filter type state
   const [filterType, setFilterType] = useState<FilterType>("text");
@@ -56,6 +64,10 @@ const DocumentList: React.FC = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [documentToDelete, setDocumentToDelete] = useState<Document | null>(
+    null
+  );
 
   useEffect(() => {
     const loadTags = async () => {
@@ -106,7 +118,6 @@ const DocumentList: React.FC = () => {
     rowsPerPage,
   ]);
 
-  // Add handler for filter type changes
   const handleFilterTypeChange = (newType: FilterType) => {
     setFilterType(newType);
   };
@@ -138,7 +149,32 @@ const DocumentList: React.FC = () => {
     setUploadDialogOpen(false);
   };
 
-  // Method to refresh documents after upload
+  const handleOpenDeleteDialog = (document: Document) => {
+    setDocumentToDelete(document);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleCloseDeleteDialog = () => {
+    setDeleteDialogOpen(false);
+    setDocumentToDelete(null);
+  };
+
+  const handleDeleteDocument = async () => {
+    if (!documentToDelete) return;
+
+    try {
+      setError(null);
+      await DocumentService.deleteDocument(documentToDelete.id);
+      handleCloseDeleteDialog();
+      refreshDocuments();
+    } catch (err) {
+      console.error("Delete error:", err);
+      setError(getErrorMessage(err, "Failed to delete document"));
+      handleCloseDeleteDialog();
+    }
+  };
+
+  // Method to refresh documents after upload or update
   const refreshDocuments = async () => {
     try {
       setLoading(true);
@@ -151,11 +187,41 @@ const DocumentList: React.FC = () => {
         size: rowsPerPage,
       });
       setDocuments(docsResponse.content);
+
+      // If we have a selected document, refresh it too
+      if (selectedDocument) {
+        const refreshedDoc = docsResponse.content.find(
+          (doc) => doc.id === selectedDocument.id
+        );
+        if (refreshedDoc) {
+          setSelectedDocument(refreshedDoc);
+        }
+      }
+
       setError(null);
     } catch (err) {
       setError(getErrorMessage(err, "Failed to fetch documents"));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleOpenDocument = (document: Document, inEditMode = false) => {
+    setSelectedDocument(document);
+    setEditMode(inEditMode);
+  };
+
+  // Update the handleDocumentUpdate method to update a single document without full refresh
+  const handleDocumentUpdate = (updatedDocument: Document) => {
+    setDocuments((prevDocuments) =>
+      prevDocuments.map((doc) =>
+        doc.id === updatedDocument.id ? updatedDocument : doc
+      )
+    );
+
+    // Also update the selected document if it's the same one
+    if (selectedDocument?.id === updatedDocument.id) {
+      setSelectedDocument(updatedDocument);
     }
   };
 
@@ -212,9 +278,29 @@ const DocumentList: React.FC = () => {
                 <TableCell>{formatDate(document.uploadDate)}</TableCell>
                 <TableCell>{document.contentType}</TableCell>
                 <TableCell>
-                  <IconButton onClick={() => setSelectedDocument(document)}>
-                    <DownloadIcon />
-                  </IconButton>
+                  <Box sx={{ display: "flex" }}>
+                    <Tooltip title="Details">
+                      <IconButton
+                        onClick={() => handleOpenDocument(document)}
+                        color="primary"
+                      >
+                        <InfoIcon />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Download">
+                      <IconButton onClick={() => handleDownload(document)}>
+                        <DownloadIcon />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Delete">
+                      <IconButton
+                        onClick={() => handleOpenDeleteDialog(document)}
+                        color="error"
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
                 </TableCell>
               </TableRow>
             ))}
@@ -238,8 +324,12 @@ const DocumentList: React.FC = () => {
         document={selectedDocument}
         tags={tags}
         open={!!selectedDocument}
-        onClose={() => setSelectedDocument(null)}
-        onDownload={handleDownload}
+        onClose={() => {
+          setSelectedDocument(null);
+          setEditMode(false);
+        }}
+        onUpdateSuccess={handleDocumentUpdate}
+        startInEditMode={editMode}
       />
 
       <UploadDocumentDialog
@@ -250,6 +340,14 @@ const DocumentList: React.FC = () => {
           handleCloseUploadDialog();
           refreshDocuments();
         }}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteDialog
+        open={deleteDialogOpen}
+        onClose={handleCloseDeleteDialog}
+        onConfirm={handleDeleteDocument}
+        documentName={documentToDelete?.name || ""}
       />
     </>
   );

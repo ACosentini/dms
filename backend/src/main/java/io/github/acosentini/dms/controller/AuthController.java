@@ -14,6 +14,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.validation.Valid;
 
@@ -21,6 +24,8 @@ import javax.validation.Valid;
 @RequestMapping("/auth")
 @CrossOrigin(origins = "*", maxAge = 3600)
 public class AuthController {
+
+    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
     @Autowired
     private UserService userService;
@@ -57,9 +62,18 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
+    @Transactional
     public ResponseEntity<?> logout(@Valid @RequestBody LogoutRequest request) {
-        tokenProvider.invalidateRefreshToken(request.getRefreshToken());
-        return ResponseEntity.ok("Logged out successfully");
+        try {
+            logger.info("Processing logout request for token: {}", request.getRefreshToken().substring(0, 10) + "...");
+            tokenProvider.invalidateRefreshToken(request.getRefreshToken());
+            logger.info("Refresh token invalidated successfully");
+            return ResponseEntity.ok().body("Logged out successfully");
+        } catch (Exception e) {
+            logger.error("Error during logout: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Error processing logout: " + e.getMessage());
+        }
     }
 
     @PostMapping("/register")

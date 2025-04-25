@@ -29,7 +29,6 @@ const AuthService = {
       throw new Error("No access token received");
     }
 
-    console.log("Setting access token:", response.data.accessToken);
     StorageService.setAccessToken(response.data.accessToken);
     if (response.data.refreshToken) {
       StorageService.setRefreshToken(response.data.refreshToken);
@@ -75,14 +74,27 @@ const AuthService = {
 
   logout: async (): Promise<void> => {
     const refreshToken = StorageService.getRefreshToken();
+
+    // Always clear local auth data first to ensure logout works client-side
+    // even if the server call fails
+    StorageService.clearAuth();
+
     if (refreshToken) {
       try {
+        // Attempt to notify server about logout
         await post("/auth/logout", { refreshToken });
-      } catch (error) {
-        console.error("Error during logout:", error);
+      } catch (error: any) {
+        console.error("Error during logout API call:", error);
+        console.error("Logout server error details:", {
+          status: error.response?.status,
+          message: error.response?.data?.message || error.message,
+          error: error.response?.data || error,
+        });
+        // Don't rethrow - we already cleared local storage
       }
+    } else {
+      console.log("No refresh token found for server-side logout");
     }
-    StorageService.clearAuth();
   },
 
   getCurrentUser: (): JwtPayload | null => {

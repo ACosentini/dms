@@ -194,6 +194,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       tokenCheckTimeout.current = null;
     }
 
+    // Call auth service logout which will clear storage first then attempt API call
     AuthService.logout();
 
     setAuthState({
