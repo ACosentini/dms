@@ -1,7 +1,7 @@
 # Environment variables
 .env
 *.env
-
+.env.prod
 # Compiled files
 */target/
 */build/
