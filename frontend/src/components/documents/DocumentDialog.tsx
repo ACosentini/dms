@@ -12,6 +12,7 @@ import {
   TextField,
   IconButton,
   Tooltip,
+  Autocomplete,
 } from "@mui/material";
 import { Document, Tag } from "../../types";
 import { Edit as EditIcon } from "@mui/icons-material";
@@ -37,6 +38,7 @@ const DocumentDialog: React.FC<DocumentDialogProps> = ({
 }) => {
   const [isEditing, setIsEditing] = useState(startInEditMode);
   const [newName, setNewName] = useState("");
+  const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [currentDocument, setCurrentDocument] = useState<Document | null>(null);
@@ -47,6 +49,10 @@ const DocumentDialog: React.FC<DocumentDialogProps> = ({
       setCurrentDocument(document);
       setError(null);
 
+      // Set selected tags based on document's tagIds
+      const docTags = tags.filter((tag) => document.tagIds?.includes(tag.id));
+      setSelectedTags(docTags);
+
       if (startInEditMode) {
         setNewName(document.name);
         setIsEditing(true);
@@ -54,7 +60,7 @@ const DocumentDialog: React.FC<DocumentDialogProps> = ({
         setIsEditing(false);
       }
     }
-  }, [document, open, startInEditMode]);
+  }, [document, open, startInEditMode, tags]);
 
   // Safe getters to prevent null reference errors
   const documentName = currentDocument?.name || "";
@@ -72,7 +78,15 @@ const DocumentDialog: React.FC<DocumentDialogProps> = ({
   const handleCancelEdit = useCallback(() => {
     setIsEditing(false);
     setError(null);
-  }, []);
+
+    // Reset selected tags to match current document
+    if (currentDocument) {
+      const docTags = tags.filter((tag) =>
+        currentDocument.tagIds?.includes(tag.id)
+      );
+      setSelectedTags(docTags);
+    }
+  }, [currentDocument, tags]);
 
   const handleSaveEdit = useCallback(async () => {
     if (!currentDocument) return;
@@ -86,16 +100,23 @@ const DocumentDialog: React.FC<DocumentDialogProps> = ({
       setLoading(true);
       setError(null);
 
+      // Get tag IDs from selectedTags
+      const tagIds = selectedTags.map((tag) => tag.id);
+
       // Optimistically update UI
       const optimisticUpdate = {
         ...currentDocument,
         name: newName.trim(),
+        tagIds,
       };
       setCurrentDocument(optimisticUpdate);
 
       const updatedDocument = await DocumentService.updateDocument(
         currentDocument.id,
-        { name: newName.trim() }
+        {
+          name: newName.trim(),
+          tagIds,
+        }
       );
 
       // Update with actual server response
@@ -103,18 +124,17 @@ const DocumentDialog: React.FC<DocumentDialogProps> = ({
       setIsEditing(false);
 
       // Notify parent component with the updated document
-      // This allows the parent to update its state without a full refresh
       if (onUpdateSuccess) {
         onUpdateSuccess(updatedDocument);
       }
     } catch (err: any) {
       // Revert to original on error
       setCurrentDocument(document);
-      setError(err.message || "Failed to update document name");
+      setError(err.message || "Failed to update document");
     } finally {
       setLoading(false);
     }
-  }, [currentDocument, document, newName, onUpdateSuccess]);
+  }, [currentDocument, document, newName, onUpdateSuccess, selectedTags]);
 
   if (!open || !currentDocument) return null;
 
@@ -144,7 +164,7 @@ const DocumentDialog: React.FC<DocumentDialogProps> = ({
             <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
               {documentName}
             </Typography>
-            <Tooltip title="Rename">
+            <Tooltip title="Edit Document">
               <IconButton onClick={handleEditClick} size="small">
                 <EditIcon />
               </IconButton>
@@ -170,11 +190,31 @@ const DocumentDialog: React.FC<DocumentDialogProps> = ({
             <Typography variant="subtitle2" color="text.secondary" gutterBottom>
               Tags
             </Typography>
-            <Stack direction="row" spacing={1} flexWrap="wrap">
-              {documentTags.map((tag) => (
-                <Chip key={tag.id} label={tag.name} size="small" />
-              ))}
-            </Stack>
+            {isEditing ? (
+              <Autocomplete
+                multiple
+                options={tags}
+                value={selectedTags}
+                onChange={(_, newValue) => setSelectedTags(newValue)}
+                getOptionLabel={(option) => option.name}
+                isOptionEqualToValue={(option, value) => option.id === value.id}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    variant="outlined"
+                    placeholder="Select tags"
+                    fullWidth
+                  />
+                )}
+                disabled={loading}
+              />
+            ) : (
+              <Stack direction="row" spacing={1} flexWrap="wrap">
+                {documentTags.map((tag) => (
+                  <Chip key={tag.id} label={tag.name} size="small" />
+                ))}
+              </Stack>
+            )}
           </Box>
         </Stack>
       </DialogContent>

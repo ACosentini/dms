@@ -8,14 +8,15 @@ A full-stack document management system built with Spring Boot and React, contai
 - Document upload, download, and management
 - Document tagging and categorization
 - Search functionality
-- Responsive UI
+- Secure file storage with encryption
 
 ## Tech Stack
 
 - **Backend**: Java Spring Boot
 - **Frontend**: React
-- **Database**: MySQL
+- **Database**: PostgreSQL
 - **Containerization**: Docker
+- **Deployment**: Render
 
 ## Development Setup
 
@@ -36,20 +37,29 @@ A full-stack document management system built with Spring Boot and React, contai
 2. Create a `.env` file in the project root with the following variables:
 
    ```
-   # Database credentials
-   MYSQL_DATABASE=dms
-   MYSQL_USER=dmsuser
-   MYSQL_PASSWORD=your_secure_password_here
-   MYSQL_ROOT_PASSWORD=your_secure_root_password_here
+   # PostgreSQL database configuration
+   POSTGRES_DB=dms_db
+   POSTGRES_USER=postgres
+   POSTGRES_PASSWORD=postgres
 
    # Spring datasource
-   SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/dms
-   SPRING_DATASOURCE_USERNAME=dmsuser
-   SPRING_DATASOURCE_PASSWORD=your_secure_password_here
+   SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/dms_db
+   SPRING_DATASOURCE_USERNAME=postgres
+   SPRING_DATASOURCE_PASSWORD=postgres
+   SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.PostgreSQLDialect
 
    # JWT Secret
-   JWT_SECRET=your_very_long_and_secure_random_string_here
+   JWT_SECRET=development_jwt_secret_key_please_change_in_production
    JWT_EXPIRATION=86400000
+
+   # Environment setting
+   SPRING_PROFILES_ACTIVE=dev
+
+   # Encryption secret
+   ENCRYPTION_SECRET=development_encryption_key_please_change_in_production
+
+   # File storage location
+   FILE_UPLOAD_DIR=./uploads/dev
    ```
 
 3. Start the development environment:
@@ -60,7 +70,7 @@ A full-stack document management system built with Spring Boot and React, contai
 
 4. Access the application:
    - Frontend: http://localhost:3000
-   - Backend API: http://localhost:8080
+   - Backend API: http://localhost:8080/api
 
 ### Development Workflow
 
@@ -76,4 +86,49 @@ When you make changes to your code:
 
 The console will show logs of the restart process when backend files are changed.
 
+## Deployment
+
+The application is deployed on Render with the following setup:
+
+### Backend Service
+
+- Web Service with Docker
+- Environment Variables:
+  - `PORT=10000` (Render's default port)
+  - Database connection details
+  - JWT and encryption secrets
+  - File storage configuration
+
+### Frontend Service
+
+- Web Service with Docker
+- Environment Variables:
+  - `BACKEND_URL`: The URL of the backend service
+
+### Database
+
+- PostgreSQL database service
+
 ## Project Structure
+
+```
+dms/
+├── backend/                 # Spring Boot backend
+│   ├── src/                 # Source files
+│   ├── Dockerfile           # Production Docker configuration
+│   └── Dockerfile.dev       # Development Docker configuration
+├── frontend/                # React frontend
+│   ├── src/                 # Source files
+│   ├── Dockerfile           # Production Docker configuration
+│   ├── Dockerfile.dev       # Development Docker configuration
+│   └── nginx.conf           # Nginx configuration for production
+├── docker-compose.yml       # Development environment setup
+└── docker-compose.prod.yml  # Production environment setup
+```
+
+## Important Notes
+
+- The backend uses context path `/api` for all endpoints
+- Frontend uses nginx to proxy API requests to the backend
+- Port 10000 is used for the backend service on Render
+- File storage is configured in the environment variables
