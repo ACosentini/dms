@@ -19,9 +19,13 @@ COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
 EXPOSE 10000
 
-# Add health check
-HEALTHCHECK --interval=30s --timeout=3s CMD curl -f http://localhost:${PORT:-8080}/actuator/health || exit 1
+# Add health check - use PORT env var with default to 10000 (Render's default)
+HEALTHCHECK --interval=30s --timeout=3s CMD curl -f http://localhost:${PORT:-10000}/api/actuator/health || exit 1
 
-# Use exec form of ENTRYPOINT for proper signal handling
-# Pass in the PORT environment variable to the Java application
-ENTRYPOINT ["sh", "-c", "java -jar app.jar --server.port=${PORT:-8080}"] 
+# Create a script to properly handle environment variables and signals
+RUN echo '#!/bin/sh\n\
+exec java -jar app.jar --server.port=${PORT:-10000}' > /app/run.sh && \
+chmod +x /app/run.sh
+
+# Use the script as entrypoint for proper signal handling
+ENTRYPOINT ["/app/run.sh"] 
