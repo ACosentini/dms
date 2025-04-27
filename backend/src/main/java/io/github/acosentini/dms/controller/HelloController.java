@@ -12,6 +12,6 @@ public class HelloController {
     
     @GetMapping
     public String hello() {
-        return "Hello from DMS Backend!!";
+        return "Hello from DMS Backend!";
     }
 } 
