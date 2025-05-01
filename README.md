@@ -30,7 +30,7 @@ A full-stack document management system built with Spring Boot and React, contai
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/yourusername/dms.git
+   git clone https://github.com/ACosentini/dms.git
    cd dms
    ```
 
