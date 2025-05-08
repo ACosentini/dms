@@ -29,7 +29,7 @@ import { getErrorMessage } from "../utils/error.utils";
 
 const TagManagement: React.FC = () => {
   const [tags, setTags] = useState<Tag[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTag, setEditingTag] = useState<Tag | null>(null);
@@ -37,7 +37,7 @@ const TagManagement: React.FC = () => {
 
   const loadTags = async () => {
     try {
-      setLoading(true);
+      setIsLoading(true);
       const tags = await TagService.getAllTags();
       setTags(tags);
       setError(null);
@@ -45,7 +45,7 @@ const TagManagement: React.FC = () => {
       setError(getErrorMessage(err, "Failed to load tags"));
       console.error("Error loading tags:", err);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -102,7 +102,7 @@ const TagManagement: React.FC = () => {
     }
   };
 
-  if (loading) return <LoadingSpinner />;
+  if (isLoading) return <LoadingSpinner />;
 
   return (
     <>
@@ -169,7 +169,7 @@ const TagManagement: React.FC = () => {
           <Button
             onClick={handleSubmit}
             variant="contained"
-            disabled={!tagName.trim()}
+            disabled={!tagName.trim() || isLoading}
           >
             {editingTag ? "Update" : "Create"}
           </Button>

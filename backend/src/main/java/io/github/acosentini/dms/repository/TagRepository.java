@@ -11,11 +11,26 @@ import java.util.Optional;
 
 @Repository
 public interface TagRepository extends JpaRepository<Tag, Long> {
-    Optional<Tag> findByName(String name);
-    boolean existsByName(String name);
+    /**
+     * Find a tag by name and owner ID
+     */
+    Optional<Tag> findByNameAndOwnerId(String name, Long ownerId);
     
-    @Query("SELECT t FROM Tag t JOIN t.documents d WHERE d.owner.id = :userId GROUP BY t")
-    List<Tag> findTagsByUserId(@Param("userId") Long userId);
-
-    List<Tag> findByNameContaining(String keyword);
+    /**
+     * Check if a tag exists with given name and owner
+     */
+    boolean existsByNameAndOwnerId(String name, Long ownerId);
+    
+    /**
+     * Find all tags owned by a user
+     */
+    List<Tag> findByOwnerId(Long ownerId);
+    
+    /**
+     * Find tags by name (containing search term) for a specific user
+     */
+    List<Tag> findByNameContainingAndOwnerId(String keyword, Long ownerId);
+    
+    // For backward compatibility during migration - can be removed later
+    Optional<Tag> findByName(String name);
 } 

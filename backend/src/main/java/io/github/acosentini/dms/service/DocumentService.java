@@ -56,7 +56,16 @@ public class DocumentService {
         // Process tags
         if (documentDTO.getTagIds() != null && !documentDTO.getTagIds().isEmpty()) {
             Set<Tag> tags = documentDTO.getTagIds().stream()
-                .map(tagId -> tagService.getTagById(tagId))
+                .map(tagId -> {
+                    Tag tag = tagService.getTagById(tagId);
+                    
+                    // Verify that the tag belongs to the same user as the document
+                    if (!tag.getOwner().getId().equals(userId)) {
+                        throw new IllegalArgumentException("Cannot use a tag that doesn't belong to the document owner");
+                    }
+                    
+                    return tag;
+                })
                 .collect(Collectors.toSet());
             document.setTags(tags);
         }
@@ -160,8 +169,20 @@ public class DocumentService {
         
         // Update tags if provided
         if (documentDTO.getTagIds() != null) {
+            // Get the document's owner
+            Long userId = document.getOwner().getId();
+            
             Set<Tag> tags = documentDTO.getTagIds().stream()
-                .map(tagId -> tagService.getTagById(tagId))
+                .map(tagId -> {
+                    Tag tag = tagService.getTagById(tagId);
+                    
+                    // Verify that the tag belongs to the same user as the document
+                    if (!tag.getOwner().getId().equals(userId)) {
+                        throw new IllegalArgumentException("Cannot use a tag that doesn't belong to the document owner");
+                    }
+                    
+                    return tag;
+                })
                 .collect(Collectors.toSet());
             document.setTags(tags);
         }

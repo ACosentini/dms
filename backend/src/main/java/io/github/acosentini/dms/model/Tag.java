@@ -5,14 +5,20 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Table(name = "tags")
+@Table(name = "tags", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"name", "owner_id"})
+})
 public class Tag {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String name;
+    
+    @ManyToOne
+    @JoinColumn(name = "owner_id", nullable = false)
+    private User owner;
 
     @ManyToMany(mappedBy = "tags")
     private Set<Document> documents = new HashSet<>();
@@ -40,6 +46,14 @@ public class Tag {
 
     public void setName(String name) {
         this.name = name;
+    }
+    
+    public User getOwner() {
+        return owner;
+    }
+
+    public void setOwner(User owner) {
+        this.owner = owner;
     }
 
     public Set<Document> getDocuments() {
