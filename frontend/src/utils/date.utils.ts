@@ -33,3 +33,12 @@ export const toEndOfDay = (date: Dayjs | null): Dayjs | null => {
   if (!date) return null;
   return date.endOf("day");
 };
+
+/**
+ * Checks if a date is valid and fully selected (not partial)
+ * @param date The date to check
+ * @returns True if the date is valid and complete
+ */
+export const isValidDate = (date: Dayjs | null): boolean => {
+  return !!date && date.isValid();
+};

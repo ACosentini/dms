@@ -1,26 +1,6 @@
-import React, { useEffect, useState } from "react";
-import {
-  Box,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
-  IconButton,
-  Typography,
-  Alert,
-  Button,
-  Tooltip,
-} from "@mui/material";
-import {
-  Download as DownloadIcon,
-  Add as AddIcon,
-  Delete as DeleteIcon,
-  Info as InfoIcon,
-} from "@mui/icons-material";
+import React, { useEffect, useState, useCallback } from "react";
+import { Box, TablePagination, Typography, Alert, Button } from "@mui/material";
+import { Add as AddIcon } from "@mui/icons-material";
 
 import { Document, Tag } from "../types";
 import DocumentService from "../services/document.service";
@@ -28,15 +8,16 @@ import TagService from "../services/tag.service";
 import DocumentSearch from "../components/documents/DocumentSearch";
 import DocumentDialog from "../components/documents/DocumentDialog";
 import DeleteDialog from "../components/documents/DeleteDialog";
+import DocumentTable from "../components/documents/DocumentTable";
 import { useNavigate } from "react-router-dom";
 import StorageService from "../services/storage.service";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import { Dayjs } from "dayjs";
-import { dateToISOString, formatDate } from "../utils/date.utils";
+import { dateToISOString } from "../utils/date.utils";
 import UploadDocumentDialog from "../components/documents/UploadDocumentDialog";
 import { getErrorMessage } from "../utils/error.utils";
+import { isValidDate } from "../utils/date.utils";
 
-// Define filter types
 type FilterType = "text" | "date" | "tags";
 
 const DocumentList: React.FC = () => {
@@ -46,7 +27,8 @@ const DocumentList: React.FC = () => {
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(
     null
   );
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
 
@@ -69,6 +51,47 @@ const DocumentList: React.FC = () => {
     null
   );
 
+  const fetchDocuments = useCallback(async () => {
+    try {
+      setLoading(true);
+
+      // Only include valid dates in the request
+      const validStartDate = isValidDate(startDate)
+        ? dateToISOString(startDate)
+        : undefined;
+      const validEndDate = isValidDate(endDate)
+        ? dateToISOString(endDate)
+        : undefined;
+
+      const docsResponse = await DocumentService.searchDocuments({
+        searchTerm,
+        startDate: validStartDate,
+        endDate: validEndDate,
+        tagIds: selectedTags.map((tag) => tag.id),
+        page,
+        size: rowsPerPage,
+      });
+
+      setDocuments(docsResponse.content);
+      setError(null);
+    } catch (err) {
+      setError(getErrorMessage(err, "Failed to fetch documents"));
+    } finally {
+      setLoading(false);
+      setInitialLoading(false);
+    }
+  }, [searchTerm, startDate, endDate, selectedTags, page, rowsPerPage]);
+
+  // Initial load
+  useEffect(() => {
+    if (!StorageService.hasValidSession()) {
+      navigate("/login");
+      return;
+    }
+
+    fetchDocuments();
+  }, [navigate, fetchDocuments]);
+
   useEffect(() => {
     const loadTags = async () => {
       try {
@@ -81,43 +104,6 @@ const DocumentList: React.FC = () => {
     loadTags();
   }, []);
 
-  useEffect(() => {
-    if (!StorageService.hasValidSession()) {
-      navigate("/login");
-      return;
-    }
-
-    const fetchDocuments = async () => {
-      try {
-        setLoading(true);
-        const docsResponse = await DocumentService.searchDocuments({
-          searchTerm,
-          startDate: dateToISOString(startDate),
-          endDate: dateToISOString(endDate),
-          tagIds: selectedTags.map((tag) => tag.id),
-          page,
-          size: rowsPerPage,
-        });
-        setDocuments(docsResponse.content);
-        setError(null);
-      } catch (err) {
-        setError(getErrorMessage(err, "Failed to fetch documents"));
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDocuments();
-  }, [
-    navigate,
-    searchTerm,
-    startDate,
-    endDate,
-    selectedTags,
-    page,
-    rowsPerPage,
-  ]);
-
   const handleFilterTypeChange = (newType: FilterType) => {
     setFilterType(newType);
   };
@@ -127,7 +113,6 @@ const DocumentList: React.FC = () => {
     setStartDate(null);
     setEndDate(null);
     setSelectedTags([]);
-    // Reset filter type when clearing
     setFilterType("text");
   };
 
@@ -166,43 +151,11 @@ const DocumentList: React.FC = () => {
       setError(null);
       await DocumentService.deleteDocument(documentToDelete.id);
       handleCloseDeleteDialog();
-      refreshDocuments();
+      fetchDocuments();
     } catch (err) {
       console.error("Delete error:", err);
       setError(getErrorMessage(err, "Failed to delete document"));
       handleCloseDeleteDialog();
-    }
-  };
-
-  // Method to refresh documents after upload or update
-  const refreshDocuments = async () => {
-    try {
-      setLoading(true);
-      const docsResponse = await DocumentService.searchDocuments({
-        searchTerm,
-        startDate: dateToISOString(startDate),
-        endDate: dateToISOString(endDate),
-        tagIds: selectedTags.map((tag) => tag.id),
-        page,
-        size: rowsPerPage,
-      });
-      setDocuments(docsResponse.content);
-
-      // If we have a selected document, refresh it too
-      if (selectedDocument) {
-        const refreshedDoc = docsResponse.content.find(
-          (doc) => doc.id === selectedDocument.id
-        );
-        if (refreshedDoc) {
-          setSelectedDocument(refreshedDoc);
-        }
-      }
-
-      setError(null);
-    } catch (err) {
-      setError(getErrorMessage(err, "Failed to fetch documents"));
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -211,7 +164,6 @@ const DocumentList: React.FC = () => {
     setEditMode(inEditMode);
   };
 
-  // Update the handleDocumentUpdate method to update a single document without full refresh
   const handleDocumentUpdate = (updatedDocument: Document) => {
     setDocuments((prevDocuments) =>
       prevDocuments.map((doc) =>
@@ -219,13 +171,12 @@ const DocumentList: React.FC = () => {
       )
     );
 
-    // Also update the selected document if it's the same one
     if (selectedDocument?.id === updatedDocument.id) {
       setSelectedDocument(updatedDocument);
     }
   };
 
-  if (loading) return <LoadingSpinner />;
+  if (initialLoading) return <LoadingSpinner />;
 
   return (
     <>
@@ -261,52 +212,13 @@ const DocumentList: React.FC = () => {
         onClear={handleSearchClear}
       />
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell>Upload Date</TableCell>
-              <TableCell>Type</TableCell>
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {documents.map((document) => (
-              <TableRow key={document.id}>
-                <TableCell>{document.name}</TableCell>
-                <TableCell>{formatDate(document.uploadDate)}</TableCell>
-                <TableCell>{document.contentType}</TableCell>
-                <TableCell>
-                  <Box sx={{ display: "flex" }}>
-                    <Tooltip title="Details">
-                      <IconButton
-                        onClick={() => handleOpenDocument(document)}
-                        color="primary"
-                      >
-                        <InfoIcon />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Download">
-                      <IconButton onClick={() => handleDownload(document)}>
-                        <DownloadIcon />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Delete">
-                      <IconButton
-                        onClick={() => handleOpenDeleteDialog(document)}
-                        color="error"
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <DocumentTable
+        documents={documents}
+        onDownload={handleDownload}
+        onDelete={handleOpenDeleteDialog}
+        onOpen={handleOpenDocument}
+        isLoading={loading}
+      />
 
       <TablePagination
         component="div"
@@ -338,11 +250,10 @@ const DocumentList: React.FC = () => {
         availableTags={tags}
         onSuccess={() => {
           handleCloseUploadDialog();
-          refreshDocuments();
+          fetchDocuments();
         }}
       />
 
-      {/* Delete Confirmation Dialog */}
       <DeleteDialog
         open={deleteDialogOpen}
         onClose={handleCloseDeleteDialog}
